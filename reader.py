@@ -1,38 +1,33 @@
 import requests
-from bs4 import BeautifulSoup
-import re
-import sys
 
-def reader():
-    esearch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-    esearch_params = {
-        "db": "gds",
-        "term": "yeast[orgn] AND 2007/01:2007/03[PDAT] AND (gse[ETYP] OR gds[ETYP])",
-        "retmax": "5000",
-        "usehistory": "y"
-    }
-
-    esearch_response = requests.get(esearch_url, params=esearch_params)
-    esearch_soup = BeautifulSoup(esearch_response.content, features='xml')
+def search_ena():
+    base_url = "https://www.ebi.ac.uk/ena/portal/api/search"
+    #only the UK works?
+    query = 'host_tax_id=9913 AND host_body_site="rumen"'
+    #fields = 'host_body_site,host_tax_id,country,submitted_ftp'
+    fields = 'sample_accession,run_accession,study_accession,read_count,sample_title'
+    result_type = "read_run"
+    format_type = "json"  # or tsv?
     
-    #count = int(esearch_soup.find('Count').text)   FIGURE OUT WHAT COUNT DOES
-    #if count == 0:
-    #    print("No items found.")
-    #    return
- 
-    query_key = esearch_soup.find('QueryKey').text
-    web_env = esearch_soup.find('WebEnv').text
-
-    efetch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
-    efetch_params = {
-        "db": "gds",
-        "query_key": query_key,
-        "WebEnv": web_env
-    }   
-
-    efetch_response = requests.get(efetch_url, params=efetch_params)
-    print(efetch_response.text)
+    params = {
+        "result": result_type,
+        "query": query,
+        "fields": fields,
+        "format": format_type,
+        "limit": "0"  # no limit?
+    }
+    
+    response = requests.get(base_url, params=params)
+    if response.status_code == 200:
+        # write to file
+        with open("results.txt", "w") as file:
+            json_data = response.json()
+            for item in json_data:
+                file.write(str(item) + '\n')
+        return "Results written to results.txt"
+    else:
+        return f"Failed to fetch data: {response.status_code}"
 
 if __name__ == "__main__":
-    reader()
-    
+    result_message = search_ena()
+    print(result_message)
