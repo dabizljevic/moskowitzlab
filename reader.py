@@ -1,11 +1,12 @@
 import requests
+import sys
 
-def search_ena():
+def search_ena(query):
     base_url = "https://www.ebi.ac.uk/ena/portal/api/search"
-    #only the UK works?
-    query = 'host_tax_id=9913 AND host_body_site="rumen"'
+    
     #fields = 'host_body_site,host_tax_id,country,submitted_ftp'
     fields = 'sample_accession,run_accession,study_accession,read_count,sample_title'
+
     result_type = "read_run"
     format_type = "json"  # or tsv?
     
@@ -29,5 +30,16 @@ def search_ena():
         return f"Failed to fetch data: {response.status_code}"
 
 if __name__ == "__main__":
-    result_message = search_ena()
+    if len(sys.argv) == 2:
+        #looks up sequence
+        if (sys.argv[1].lower() == 'sequence'):
+            s = input("Enter your sequence: ")
+            query = 'accession="' + s + '"' #looks like   accession="sequence"
+
+        #looks up keywords FILL IN lATER
+        if (sys.argv[1].lower() == 'keyword'):
+            query = input("Enter your keywords")
+            #query = 'country="United Kingdom" AND host_tax_id=9913 AND host_body_site="rumen"'
+        
+    result_message = search_ena(query)
     print(result_message)
