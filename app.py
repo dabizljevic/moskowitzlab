@@ -15,10 +15,21 @@ HTML_TEMPLATE = '''
         body {
             background-color: #f0f8ff; /* Light blue background */
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
         }
         #container {
             text-align: center;
-            margin-top: 50px;
+            width: 80%; /* Manageable width */
+            background-color: #ffffff; /* White background for the form area */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); /* Subtle shadow */
+            margin-top: 20px; /* Adds space at the top */
         }
         select, input, button, a {
             margin: 10px;
@@ -38,89 +49,48 @@ HTML_TEMPLATE = '''
         a {
             display: block; /* Makes the link block to take new line */
             margin-top: 20px; /* Extra space from the form */
+            text-decoration: none;
+            color: #0056b3; /* Stylish blue link */
         }
         .form-section {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap; /* Ensures wrapping on small screens */
         }
-        .column {
-            margin: 10px;
+        .input-group {
+            margin-bottom: 10px;
         }
         label, input {
             display: block;
             margin: 0 auto;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
         input {
-            min-width: 200px; /* Ensures the input box is not too small */
+            min-width: 180px; /* Ensures the input box is not too small */
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        /* Styles for the + and - buttons */
+        .input-group button {
+            padding: 5px 8px; /* Smaller padding */
+            font-size: 12px; /* Smaller font size */
+            margin: 0 5px; /* Less margin for tighter spacing */
+            width: 30px; /* Fixed width */
+            height: 30px; /* Fixed height */
+            line-height: 12px; /* Adjust line height to center the text */
         }
         #results {
             text-align: left; /* Aligns results text to the left */
-            width: 90%; /* Sets a max width for better readability */
-            margin: 20px auto; /* Centers the results container */
+            width: 80%; /* Width relative to the container size */
+            margin-top: 20px; /* Space above the results */
+            padding: 10px;
+            background-color: #eef; /* Lighter shade for visibility */
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* Subtle shadow for results */
+            overflow: auto; /* Adds scrollbar if content is too long */
         }
     </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            updateForm();  // Initialize form on page load
-        });
-
-        function updateForm() {
-            var select = document.getElementById('query_type');
-            var queryValue = select.value;
-            var form = document.getElementById('query_form');
-
-            if (queryValue === 'search') {
-                form.innerHTML = '<label for="search">Enter your search term:</label>' +
-                                 '<input type="text" id="search" name="search" required>';
-            } else if (queryValue === 'keyword') {
-                form.innerHTML = '<div class="form-section">' +
-                                    '<div class="column">' +
-                                        '<label for="accession">Accession:</label>' +
-                                        '<input type="text" id="accession" name="accession">' +
-                                        '<label for="allele">Allele:</label>' +
-                                        '<input type="text" id="allele" name="allele">' +
-                                        '<label for="analysis_type">Analysis Type:</label>' +
-                                        '<input type="text" id="analysis_type" name="analysis_type">' +
-                                        '<label for="base_count">Base Count:</label>' +
-                                        '<input type="text" id="base_count" name="base_count">' +
-                                        '<label for="breed">Breed:</label>' +
-                                        '<input type="text" id="breed" name="breed">' +
-                                        '<label for="cell_line">Cell Line:</label>' +
-                                        '<input type="text" id="cell_line" name="cell_line">' +
-                                        '<label for="cell_type">Cell Type:</label>' +
-                                        '<input type="text" id="cell_type" name="cell_type">' +
-                                    '</div>' +
-                                    '<div class="column">' +
-                                        '<label for="country">Country:</label>' +
-                                        '<input type="text" id="country" name="country">' +
-                                        '<label for="description">Description:</label>' +
-                                        '<input type="text" id="description" name="description">' +
-                                        '<label for="gene">Gene:</label>' +
-                                        '<input type="text" id="gene" name="gene">' +
-                                        '<label for="host">Host:</label>' +
-                                        '<input type="text" id="host" name="host">' +
-                                        '<label for="host_body_site">Host Body Site:</label>' +
-                                        '<input type="text" id="host_body_site" name="host_body_site">' +
-                                        '<label for="host_common_name">Host Common Name:</label>' +
-                                        '<input type="text" id="host_common_name" name="host_common_name">' +
-                                        '<label for="host_genotype">Host Genotype:</label>' +
-                                        '<input type="text" id="host_genotype" name="host_genotype">' +
-                                    '</div>' +
-                                    '<div class="column">' +
-                                        '<label for="host_sex">Host Sex:</label>' +
-                                        '<input type="text" id="host_sex" name="host_sex">' +
-                                        '<label for="host_tax_id">Host Tax ID:</label>' +
-                                        '<input type="text" id="host_tax_id" name="host_tax_id">' +
-                                        '<label for="sample_title">Sample Title:</label>' +
-                                        '<input type="text" id="sample_title" name="sample_title">' +
-                                    '</div>' +
-                                 '</div>';
-            } else {
-                form.innerHTML = '';
-            }
-        }
-    </script>
 </head>
 <body>
     <div id="container">
@@ -134,15 +104,66 @@ HTML_TEMPLATE = '''
             <button type="submit">Search</button>
         </form>
         <a href="/download">Download Results as Excel</a>
-        {% if results %}
-            <div id="results">
-                <h2>Results:</h2>
-                <pre>{{ results }}</pre>
-            </div>
-        {% endif %}
     </div>
+    {% if results %}
+        <div id="results">
+            <h2>Results:</h2>
+            <pre>{{ results }}</pre>
+        </div>
+    {% endif %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            updateForm();  // Initialize form on page load
+        });
+
+        function updateForm() {
+            var select = document.getElementById('query_type');
+            var queryValue = select.value;
+            var form = document.getElementById('query_form');
+
+            if (queryValue === 'search') {
+                form.innerHTML = '<label for="search">Enter your search term:</label>' +
+                                 '<input type="text" id="search" name="search">';
+            } else if (queryValue === 'keyword') {
+                form.innerHTML = '<div class="form-section" id="keyword_form"></div>';
+                ['accession', 'allele', 'analysis_type', 'base_count', 'breed', 'cell_line', 'cell_type', 'country', 'description', 'gene', 'host', 'host_body_site', 'host_common_name', 'host_genotype', 'host_sex', 'sample_title'].forEach(field => {
+                    addKeywordInput(field);
+                });
+            } else {
+                form.innerHTML = '';
+            }
+        }
+
+        function addKeywordInput(field) {
+            var container = document.getElementById('keyword_form');
+            var inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+            inputGroup.innerHTML = 
+                `<label for="${field}">${field.replace(/_/g, ' ').charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')}:</label>` +
+                `<input type="text" name="${field}">`;
+            container.appendChild(inputGroup);
+
+            var addButton = document.createElement('button');
+            addButton.type = 'button';
+            addButton.onclick = () => addKeywordInput(field);
+            addButton.textContent = '+';  // Changed button text to "+"
+            inputGroup.appendChild(addButton);
+
+            var removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.onclick = function() { removeInput(this); };
+            removeButton.textContent = '-';  // Changed button text to "-"
+            inputGroup.appendChild(removeButton);
+        }
+
+        function removeInput(button) {
+            var group = button.parentNode;
+            group.parentNode.removeChild(group);
+        }
+    </script>
 </body>
 </html>
+
 '''
 
 
@@ -160,8 +181,8 @@ def home():
             search_words = search.split()  # Split the search string into words
             queries = []
             for word in search_words:
-                # Construct query part for each word
-                part = f'(country="{word}" OR host_body_site="{word}" OR description="{search}")'
+                # Construct query part for each word, ensuring each word is individually considered for all fields
+                part = f'(country="{word}" OR host_body_site="{word}" OR description="{word}" OR sample_title="{word}")'
                 queries.append(part)
             query = ' AND '.join(queries)  # Combine all parts with AND
 
@@ -175,7 +196,15 @@ def home():
                 'host_phenotype', 'host_scientific_name', 'host_sex', 'host_tax_id',
                 'sample_accession', 'sample_title'
             ]
-            query_parts = [f'{field}={request.form.get(field)}' if field in numeric_fields and request.form.get(field) else f'{field}="{request.form.get(field)}"' for field in field_names if request.form.get(field)]
+            query_parts = []
+            for field in field_names:
+                field_values = request.form.getlist(field)
+                for value in field_values:
+                    if value:
+                        if field in numeric_fields:
+                            query_parts.append(f'{field}={value}')
+                        else:
+                            query_parts.append(f'{field}="{value}"')
             query = " AND ".join(query_parts) if query_parts else ''
 
         else:
@@ -224,3 +253,5 @@ def search_ena(query):
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
