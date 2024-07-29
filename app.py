@@ -35,12 +35,12 @@ HTML_TEMPLATE = '''
             margin: 10px;
         }
         button {
-            padding: 10px 20px;
+            padding: 5px 10px;
             background-color: #0056b3; /* Dark blue background */
             color: white;
             border: none;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: 12px;
             cursor: pointer;
         }
         button:hover {
@@ -71,49 +71,51 @@ HTML_TEMPLATE = '''
         h1 {
             margin-bottom: 20px;
         }
-        /* Styles for the + and - buttons */
-        .input-group button {
-            padding: 5px 8px; /* Smaller padding */
-            font-size: 12px; /* Smaller font size */
-            margin: 0 5px; /* Less margin for tighter spacing */
-            width: 30px; /* Fixed width */
-            height: 30px; /* Fixed height */
-            line-height: 12px; /* Adjust line height to center the text */
-        }
-        #results {
-            text-align: left; /* Aligns results text to the left */
-            width: 80%; /* Width relative to the container size */
-            margin-top: 20px; /* Space above the results */
+        #query-preview, #results {
+            margin: 10px auto;
             padding: 10px;
-            background-color: #eef; /* Lighter shade for visibility */
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1); /* Subtle shadow for results */
-            overflow: auto; /* Adds scrollbar if content is too long */
+            background-color: #eef; /* Light purple background for visibility */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 80%;
+            font-size: 16px;
+            text-align: left;
+            overflow-x: auto; /* Enables horizontal scrolling */
+            white-space: nowrap; /* Prevents text from wrapping */
         }
     </style>
 </head>
 <body>
     <div id="container">
         <h1>ENA Search Tool</h1>
+        <div id="query-preview">Query preview will appear here.</div>
         <form action="/" method="post">
             <select name="query_type" id="query_type" onchange="updateForm()">
                 <option value="keyword" selected>Keyword</option>
                 <option value="search">Search</option>
             </select>
             <div id="query_form"></div>
+            <input type="hidden" name="constructed_query" id="constructed_query">
             <button type="submit">Search</button>
         </form>
         <a href="/download">Download Results as Excel</a>
-    </div>
-    {% if results %}
+        {% if results %}
         <div id="results">
             <h2>Results:</h2>
             <pre>{{ results }}</pre>
         </div>
-    {% endif %}
+        {% endif %}
+    </div>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             updateForm();  // Initialize form on page load
+        });
+
+        let andParts = [];
+        let orParts = [];
+
+        document.querySelector('form').addEventListener('submit', function() {
+            document.getElementById('constructed_query').value = document.getElementById('query-preview').textContent.replace('Query preview: ', '');
         });
 
         function updateForm() {
@@ -140,36 +142,31 @@ HTML_TEMPLATE = '''
             inputGroup.className = 'input-group';
             inputGroup.innerHTML = 
                 `<label for="${field}">${field.replace(/_/g, ' ').charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')}:</label>` +
-                `<input type="text" name="${field}">`;
+                `<input type="text" id="${field}" name="${field}">` +
+                `<button type="button" onclick="addToQuery('${field}', document.getElementById('${field}').value, 'AND')">AND</button>` +
+                `<button type="button" onclick="addToQuery('${field}', document.getElementById('${field}').value, 'OR')">OR</button>`;
             container.appendChild(inputGroup);
-
-            var addButton = document.createElement('button');
-            addButton.type = 'button';
-            addButton.onclick = () => addKeywordInput(field);
-            addButton.textContent = '+';  // Changed button text to "+"
-            inputGroup.appendChild(addButton);
-
-            var removeButton = document.createElement('button');
-            removeButton.type = 'button';
-            removeButton.onclick = function() { removeInput(this); };
-            removeButton.textContent = '-';  // Changed button text to "-"
-            inputGroup.appendChild(removeButton);
         }
 
-        function removeInput(button) {
-            var group = button.parentNode;
-            group.parentNode.removeChild(group);
+        function addToQuery(field, value, operator) {
+            if (value.trim() !== '') {
+                const queryPart = `${field}="${value}"`;
+                if (operator === 'AND') {
+                    andParts.push(queryPart);
+                } else {
+                    orParts.push(queryPart);
+                }
+                const andString = andParts.length > 0 ? `(${andParts.join(' AND ')})` : '';
+                const orString = orParts.length > 0 ? `(${orParts.join(' OR ')})` : '';
+                const queryPreview = [andString, orString].filter(part => part !== '').join(' AND ');
+                document.getElementById('query-preview').textContent = 'Query preview: ' + queryPreview;
+                document.getElementById(field).value = ''; // Clear the input field after adding
+            }
         }
     </script>
 </body>
 </html>
-
 '''
-
-
-
-results = []
-#description="{search}" OR title="{search}" OR gene="{search}" OR keywords="{search}" OR sample_title="{search}" OR scientific_name="{search}" OR host="{search}" OR environment_biome="{search}" OR environment_feature="{search}" OR environment_material="{search}" OR study_title="{search}" OR experiment_title="{search}" OR analysis_title="{search}" OR 
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -187,25 +184,7 @@ def home():
             query = ' AND '.join(queries)  # Combine all parts with AND
 
         elif query_type == 'keyword':
-            numeric_fields = ['host_tax_id', 'base_count']
-            field_names = [
-                'country', 'host_tax_id', 'host_body_site', 'accession', 'analysis_type',
-                'allele', 'base_count', 'breed', 'cell_line', 'cell_type', 'collected_by',
-                'collection_date', 'country', 'environment_biome', 'experiment', 'gene',
-                'geo_accession', 'host', 'host_body_site', 'host_common_name', 'host_genotype',
-                'host_phenotype', 'host_scientific_name', 'host_sex', 'host_tax_id',
-                'sample_accession', 'sample_title'
-            ]
-            query_parts = []
-            for field in field_names:
-                field_values = request.form.getlist(field)
-                for value in field_values:
-                    if value:
-                        if field in numeric_fields:
-                            query_parts.append(f'{field}={value}')
-                        else:
-                            query_parts.append(f'{field}="{value}"')
-            query = " AND ".join(query_parts) if query_parts else ''
+            query = request.form.get('constructed_query')  # Use the constructed query directly
 
         else:
             query = ''
@@ -215,7 +194,6 @@ def home():
         results = search_ena(query)
         return render_template_string(HTML_TEMPLATE, results=results[0])
     return render_template_string(HTML_TEMPLATE)
-
 
 @app.route('/download')
 def download():
@@ -250,8 +228,5 @@ def search_ena(query):
     else:
         return [], []  # Return empty lists if the request fails
 
-
 if __name__ == "__main__":
     app.run(debug=True)
-
-
