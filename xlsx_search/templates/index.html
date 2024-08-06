@@ -3,42 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel Search</title>
+    <title>Excel Search Tool</title>
+    <style>
+        body {
+            background-color: #f0f8ff; 
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh; 
+        }
+        #container {
+            text-align: center;
+            width: 80%; 
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-top: 20px; 
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 400px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"],
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #0056b3; 
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #003d7a; 
+        }
+        .messages,
+        .results,
+        .download-link {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #eef; 
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 90%;
+            text-align: left;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        .results ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .results li {
+            padding: 5px 0;
+        }
+        a.download-link {
+            display: inline-block;
+            text-decoration: none;
+            color: #0056b3; 
+            font-weight: bold;
+        }
+        a.download-link:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>Search Experiment ID</h1>
-    <form action="/" method="post" enctype="multipart/form-data">
-        <label for="file">Upload Excel Files:</label>
-        <input type="file" name="file" multiple required>
-        <br><br>
-        <label for="search_string">Search String:</label>
-        <input type="text" name="search_string" required>
-        <br><br>
-        <input type="submit" value="Search">
-    </form>
+    <div id="container">
+        <h1>Excel Search Tool</h1>
+        <form action="/" method="post" enctype="multipart/form-data">
+            <div class="input-group">
+                <label for="file">Upload Excel Files:</label>
+                <input type="file" name="file" multiple required>
+            </div>
+            <div class="input-group">
+                <label for="search_string">Search String:</label>
+                <input type="text" name="search_string" required>
+            </div>
+            <input type="submit" value="Search">
+        </form>
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-          <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endwith %}
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="messages">
+            <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% endwith %}
 
-    {% if results %}
-    <h2>Results:</h2>
-    <ul>
-        {% for filename, experiment_description in results %}
-        <li>{{ filename }}: "{{ experiment_description }}"</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
+        {% if results %}
+        <div class="results">
+            <h2>Results:</h2>
+            <ul>
+            {% for filename, experiment_description in results %}
+            <li><strong>{{ filename }}</strong>: "{{ experiment_description }}"</li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
 
-    {% if output_file %}
-    <h2>Download Results</h2>
-    <a href="{{ url_for('download_file', filename=output_file) }}">Download Excel File</a>
-    {% endif %}
+        {% if output_file %}
+        <div class="download-link">
+            <h2>Download Results</h2>
+            <a href="{{ url_for('download_file', filename=output_file) }}" class="download-link">Download Excel File</a>
+        </div>
+        {% endif %}
+    </div>
 </body>
 </html>
