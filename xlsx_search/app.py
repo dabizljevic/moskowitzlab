@@ -5,62 +5,52 @@ import os
 app = Flask(__name__)
 app.secret_key = "secretkey"
 
-UPLOAD_FOLDER = 'uploads'
+# CHANGE DIRECTORY HERE!!
+SEARCH_DIRECTORY = '/Users/sdabiz/Desktop/work/2024summer/moskowitzlab/xlsx_search/sample_directory'
 RESULTS_FOLDER = 'results'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['SEARCH_DIRECTORY'] = SEARCH_DIRECTORY
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# results directory
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        # Check if the post request has the file 
-        if 'file' not in request.files:
-            flash('No file')
-            return render_template('index.html')
+        search_strings = request.form.getlist('search_strings[]')
+        results_set = set()  # set stops duplicates
 
-        files = request.files.getlist('file')
-        search_string = request.form['search_string']
-
-        if not files or files[0].filename == '':
-            flash('No selected files')
-            return render_template('index.html')
-
-        results = []
-
-        # read through all files 
-        for file in files:
-            if file:
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-                file.save(filepath)
+        # iterates through directory
+        for filename in os.listdir(app.config['SEARCH_DIRECTORY']):
+            if filename.endswith('.xlsx') or filename.endswith('.xls'):
+                filepath = os.path.join(app.config['SEARCH_DIRECTORY'], filename)
 
                 try:
                     df = pd.read_excel(filepath)
 
-                    # check for 'Experiment description' column 
+                    # find 'Experiment description' column
                     if 'Experiment description' not in df.columns:
-                        flash(f'No "Experiment description" column found in {file.filename}')
+                        flash(f'No "Experiment description" column found in {filename}')
                         continue
 
-                    matches = df[df['Experiment description'].astype(str).str.contains(search_string, na=False, case=False)]
-
-                    if not matches.empty:
-                        for _, row in matches.iterrows():
-                            results.append((file.filename, row['Experiment description']))
+                    # string searching
+                    for search_string in search_strings:
+                        matches = df[df['Experiment description'].astype(str).str.contains(search_string, na=False, case=False)]
+                        if not matches.empty:
+                            for _, row in matches.iterrows():
+                                results_set.add((filename, row['Experiment description']))
 
                 except Exception as e:
-                    flash(f'Error processing file {file.filename}: {str(e)}')
+                    flash(f'Error processing file {filename}: {str(e)}')
                     continue
 
-        # create an output Excel file
+        results = list(results_set) #set to list
+
+        # creates output excel using pandas
         output_filepath = None
         if results:
             output_filepath = os.path.join(app.config['RESULTS_FOLDER'], 'search_results.xlsx')
-            # Create a DataFrame from the results
             results_df = pd.DataFrame(results, columns=['File Name', 'Experiment Description'])
-            # Write the results DataFrame to an Excel file
             results_df.to_excel(output_filepath, index=False)
 
         if results:

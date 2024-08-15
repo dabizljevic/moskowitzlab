@@ -43,7 +43,6 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input[type="file"],
         input[type="text"] {
             width: 100%;
             padding: 8px;
@@ -52,7 +51,7 @@
             border-radius: 4px;
             font-size: 14px;
         }
-        input[type="submit"] {
+        input[type="submit"], button {
             padding: 10px 20px;
             background-color: #0056b3; 
             color: white;
@@ -60,8 +59,9 @@
             border-radius: 5px;
             font-size: 14px;
             cursor: pointer;
+            margin-top: 10px;
         }
-        input[type="submit"]:hover {
+        input[type="submit"]:hover, button:hover {
             background-color: #003d7a; 
         }
         .messages,
@@ -99,15 +99,14 @@
 <body>
     <div id="container">
         <h1>Excel Search Tool</h1>
-        <form action="/" method="post" enctype="multipart/form-data">
-            <div class="input-group">
-                <label for="file">Upload Excel Files:</label>
-                <input type="file" name="file" multiple required>
+        <form action="/" method="post">
+            <div id="search-fields">
+                <div class="input-group">
+                    <label for="search_string_1">Search String 1:</label>
+                    <input type="text" name="search_strings[]" id="search_string_1" required>
+                </div>
             </div>
-            <div class="input-group">
-                <label for="search_string">Search String:</label>
-                <input type="text" name="search_string" required>
-            </div>
+            <button type="button" onclick="addSearchField()">Add Another Search String</button>
             <input type="submit" value="Search">
         </form>
 
@@ -141,5 +140,21 @@
         </div>
         {% endif %}
     </div>
+
+    <script>
+        let fieldCount = 1;
+
+        function addSearchField() {
+            fieldCount++;
+            const searchFields = document.getElementById('search-fields');
+            const newField = document.createElement('div');
+            newField.className = 'input-group';
+            newField.innerHTML = `
+                <label for="search_string_${fieldCount}">Search String ${fieldCount}:</label>
+                <input type="text" name="search_strings[]" id="search_string_${fieldCount}" required>
+            `;
+            searchFields.appendChild(newField);
+        }
+    </script>
 </body>
 </html>
